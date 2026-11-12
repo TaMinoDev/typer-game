@@ -225,6 +225,9 @@
                 if(score.done === 0 && keys.includes(e.key) === false) {
                     count();
                 }
+                if(e.key === ' ') {
+                    e.preventDefault();
+                }
                 if(e.key === text.split('')[index]) {
                     console.log('right');
                     console.log(e.key);
