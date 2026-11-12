@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>typer</title>
+    <style>
+        html {
+            background-color: grey;
+            padding: 5vw;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            background: linear-gradient(var(--gradient-angle), red, orange);
+            height: 100vh;
+            animation: infinite forwards 120s bg;
+            transition: 5s;
+        }
+
+        body {
+            align-items: baseline;
+            justify-content: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: x-large;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.25);
+            scroll-behavior: smooth;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .mistakes {
+            color: white;
+            background-color: rgba(255, 174, 0, 0.75);
+            border: 1px solid black;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .main {
+            display: block;
+        }
+
+        #feedback, #textDiv {
+            font-size: medium;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        mark {
+            background-color: white;
+        }
+
+        @property --gradient-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes bg {
+            0% {
+                --gradient-angle: 0deg;
+            }
+            100% {
+                --gradient-angle: 360deg;
+            }
+        }
+
+        button, select, select option, input, select:focus, textarea {
+            border: none;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 5px;
+            border-radius: 5px;
+            outline: none
+        }
+
+        select option {
+            appearance: base-select;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div id="textDiv"></div>
+        <span id="feedback"></span>
+    </div>
+    <div class="start">
+        <h1>Typer<br>Geschwindigkeit beim Schreiben<small><sup>V 1.5</sup></small></h1>
+        <h3>Messe und Trainiere deine Schreibgeschwindigkeit!</h3>
+        <button onclick="setUp()">Starten</button>
+        <select>
+            <option>Einzelne Wörter</option>
+            <option>Ganze Sätze</option>
+            <option>Einzelne Wörter aus ganzen Sätzen</option>
+            <option>Zufällige Zeichen</option>
+            <option>Text abschreiben</option>
+        </select>
+        <input id="goaler" type="number" min="1" value="5" placeholder="Anzahl">
+        <button onclick="freeStyle()">Free Style</button>
+        <br>
+        <hr>
+        <textarea id="textInput"></textarea>
+    </div>
+    <script src="../Libare_Schröder/many_words.js"></script>
+    <script>
+        const textDiv = document.getElementById('textDiv');
+        const feedbackSpan = document.getElementById('feedback');
+        const textInput = document.getElementById('textInput');
+
+        let text = '';
+        let index = 0;
+        let contin = true;
+        let goal = 5;
+        let setted = false;
+        let mode = '';
+        let txtIndex = 0;
+        let score = {
+            right: 0,
+            wrong: 0,
+            trys: 0,
+            done: 0,
+            time: 0, // ms
+            errors: [],
+        }
+
+        const keys = ['Home','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Clear','End','PageDown','Insert','Delete','Shift','Control','Tab','Backspace','Enter','ContextMenu','AltGraph','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','Pause','PageUp','CapsLock','Entf','Alt'];
+        const groups = {
+            "Einzelne Wörter": words,
+            "inzelne Wörter aus ganzen Sätzen": 'Texte,schreiben,ist,sehr,einfach,wenn,man,weiß,was,man,tut,Infomatiker,zu,sein,macht,Spaß,aber,fehler,in,Texten,sind,oft,sehr,nervig'.split(','),
+            "Ganze Sätze": 'Einen Text zu schreiben ist sehr einfach.,Die korrekte Schreibweise eines Satzes ist wichtig.,Etwas zu Programmieren ist sehr interissant.,Jedes Programm sollte von mehreren Personen geprüft werden.,Man sollte nie einen Link in einer E-ail anklicken.,Wer das schreibt ist doof.,Viele Sätze aus dem Deutschen Wörterbuch sind echt schwierig und lang zu schreiben,Aber wenn man sich beeilt dann kann das was werden.,Rindfleischetikitirungsaufgabenübertragungsgesetz.,Donaudampfschifffahrgesellschaft,Ein Satz muss bestimmten Regeln folgen um Grammatikalisch korrekt zu sein.,Am Ende eines Satzes kommt in der regel ein Punkt oder ! oder ?.,Ein Zitat schreibt man immer in "Anführungszeichen".,Schnelles schreiben ist nicht alles was zählt.,Damit das Schreiben nicht langweilig wird sollte man viele verschiedene Dinge schreiben.,"Monoton" bedeutet das etwas Eintönig oder Langweilig ist.'.split(','),
+            "Zufällige Zeichen": 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,'.split(''),
+            "Text abschreiben": ""
+        };
+        let possible = [];
+
+        window.onload = () => {
+            if(localStorage.getItem('typer-text')) {
+                textInput.value = localStorage.getItem('typer-text');
+            }
+        }
+
+        function setUp() {
+            score = {
+                right: 0,
+                wrong: 0,
+                trys: 0,
+                done: 0,
+                time: 0,
+                errors: [],
+            };
+            setted = true;
+            contin = true;
+
+            mode = document.querySelector('select') ? document.querySelector('select').value : mode;
+            goal = document.getElementById('goaler') ? Number(document.getElementById('goaler').value) : goal;
+
+            if(mode === 'Text abschreiben') {
+                possible = document.getElementById('textInput').value.split(/[\.,\n ]/);
+                localStorage.setItem('typer-text',document.getElementById('textInput').value);
+                txtIndex = 0;
+                goal = possible.length;
+            } else {
+                possible = groups[mode];
+            }
+
+            feedbackSpan.innerHTML = '';
+            textDiv.innerHTML  = '';
+
+            load();
+            document.querySelector('div.start')?.remove();
+        }
+
+        function freeStyle() {
+            score = {
+                right: 0,
+                wrong: 0,
+                trys: 0,
+                done: 0,
+                time: 0,
+                errors: [],
+            };
+            setted = true;
+            mode = document.querySelector('select') ? document.querySelector('select').value : mode;
+            goal = NaN;
+            if(mode === 'Text abschreiben') {
+                possible = groups["Einzelne Wörter"];
+            } else {
+                possible = groups[mode];
+            }
+               
+            load();
+            document.querySelector('div.start').remove();
+        }
+
+        function load() {
+            index = 0;
+            if(mode === 'Zufällige Zeichen') {
+                text = possible = getSymbols();
+                console.log(text)
+            } else if(mode === 'Text abschreiben') {
+                text = possible[txtIndex];
+                txtIndex++;
+            } else {
+                text = possible[random(0,possible.length-1)];
+            }
+            draw();
+        }
+
+        function getSymbols() {
+            const text = 'abcdefghijklmnopqrstuvwxyzäöüABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
+            const länge = random(5,15);
+            let result = '';
+            for(let l = 0; l <= länge; l++) {
+                result += text[random(0,text.length-1)];
+            }
+            return result;
+        }
+        
+        document.addEventListener('keydown', function (e) {
+            if(setted === true) {
+                if(score.done === 0 && keys.includes(e.key) === false) {
+                    count();
+                }
+                if(e.key === text.split('')[index]) {
+                    console.log('right');
+                    console.log(e.key);
+                    index++;
+                    draw();
+                    score.right++;
+                    score.trys++;
+                } else if(keys.includes(e.key) === false) {
+                    console.log('wrong');
+                    score.wrong++;
+                    score.errors.push(`"${e.key}" gedrückt obwohl "${text.split('')[index]}" aus "${text}" gefordert war.`);
+                    score.trys++;
+                }
+                if(e.key === 'Tab') {
+                    showEnd();
+                } else if(e.key === 'Escape') {
+                    location.reload();
+                }
+            }
+        });
+
+        function draw() {
+            let done = text.split('').slice(0,index);
+            let working = text.split('').slice(index,index+1);
+            let todo = text.split('').slice(index+1,text.split('').length);
+
+            textDiv.innerHTML = `<span class="done">${done.join('')}</span><mark>${working.join('')}</mark><b>${todo.join('')}</b>`;
+
+            console.log({
+                'done': done,
+                'working': working,
+                'todo': todo
+            });
+
+            if(working.length === 0) {
+                console.log('Fertig');
+                score.done++;
+                if(score.done !== goal) {
+                    load();
+                } else {
+                    showEnd();
+                }
+            }
+        }
+
+        function random(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function count() {
+            if(contin === true) {
+                score.time += 50;
+                setTimeout(count,50);
+                feedbackSpan.innerText = (score.time/1000).toFixed(2);
+            }
+        }
+
+        function showEnd() {
+            contin = false;
+            textDiv.innerHTML = '';
+            feedbackSpan.innerHTML = `
+            <b>
+            <span>Zeit (s): ${(score.time/1000).toFixed(2)}</span>
+            <br>
+            <span>Richtig: ${score.right}/${score.trys}, Falsch: ${score.wrong}/${score.trys}</span>
+            <br>
+            <span>Erreicht: ${score.done}/${goal}</span>
+            <br>
+            <span title="Zecihen pro Sekunde">ZPS: ${(score.right/(score.time/1000)).toFixed(2)}/s</span>
+            <br>
+            </b>
+            <progress style="accent-color: lime;" max="100" value="${(score.right/score.trys)*100}"></progress>
+            <details class="mistakes" title="Alle Fehler">
+                <summary>Alle Fehler</summary>
+            ${score.errors.join('<br><br>')}    
+            </details>
+            <br>
+            <button onclick="location.reload()">Nochmal?</button>
+            `
+        }
+    </script>
+</body>
+</html>
