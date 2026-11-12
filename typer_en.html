@@ -89,15 +89,15 @@
         <span id="feedback"></span>
     </div>
     <div class="start">
-        <h1>Typer<br>Geschwindigkeit beim Schreiben<small><sup>V 1.5</sup></small></h1>
-        <h3>Messe und Trainiere deine Schreibgeschwindigkeit!</h3>
-        <button onclick="setUp()">Starten</button>
+        <h1>Typer<br>Typing with speed<small><sup>V 1.5</sup></small></h1>
+        <h3>Mesure and train your typingspeed!</h3>
+        <button onclick="setUp()">Start</button>
         <select>
-            <option>Einzelne Wörter</option>
-            <option>Ganze Sätze</option>
-            <option>Einzelne Wörter aus ganzen Sätzen</option>
-            <option>Zufällige Zeichen</option>
-            <option>Text abschreiben</option>
+            <option>Lose Words</option>
+            <option>Whole Sentenses</option>
+            <option>Lose words from real sentenses</option>
+            <option>Random Symbols</option>
+            <option>Write from your own Text</option>
         </select>
         <input id="goaler" type="number" min="1" value="5" placeholder="Anzahl">
         <button onclick="freeStyle()">Free Style</button>
@@ -105,7 +105,7 @@
         <hr>
         <textarea id="textInput"></textarea>
     </div>
-    <script src="../Libare_Schröder/many_words.js"></script>
+    <script src="list/many_words_en.js"></script>
     <script>
         const textDiv = document.getElementById('textDiv');
         const feedbackSpan = document.getElementById('feedback');
@@ -129,11 +129,11 @@
 
         const keys = ['Home','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Clear','End','PageDown','Insert','Delete','Shift','Control','Tab','Backspace','Enter','ContextMenu','AltGraph','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','Pause','PageUp','CapsLock','Entf','Alt'];
         const groups = {
-            "Einzelne Wörter": words,
-            "inzelne Wörter aus ganzen Sätzen": 'Texte,schreiben,ist,sehr,einfach,wenn,man,weiß,was,man,tut,Infomatiker,zu,sein,macht,Spaß,aber,fehler,in,Texten,sind,oft,sehr,nervig'.split(','),
-            "Ganze Sätze": 'Einen Text zu schreiben ist sehr einfach.,Die korrekte Schreibweise eines Satzes ist wichtig.,Etwas zu Programmieren ist sehr interissant.,Jedes Programm sollte von mehreren Personen geprüft werden.,Man sollte nie einen Link in einer E-ail anklicken.,Wer das schreibt ist doof.,Viele Sätze aus dem Deutschen Wörterbuch sind echt schwierig und lang zu schreiben,Aber wenn man sich beeilt dann kann das was werden.,Rindfleischetikitirungsaufgabenübertragungsgesetz.,Donaudampfschifffahrgesellschaft,Ein Satz muss bestimmten Regeln folgen um Grammatikalisch korrekt zu sein.,Am Ende eines Satzes kommt in der regel ein Punkt oder ! oder ?.,Ein Zitat schreibt man immer in "Anführungszeichen".,Schnelles schreiben ist nicht alles was zählt.,Damit das Schreiben nicht langweilig wird sollte man viele verschiedene Dinge schreiben.,"Monoton" bedeutet das etwas Eintönig oder Langweilig ist.'.split(','),
-            "Zufällige Zeichen": 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,'.split(''),
-            "Text abschreiben": ""
+            "Lose Words": words,
+            "Lose words from real sentenses": 'Texte,schreiben,ist,sehr,einfach,wenn,man,weiß,was,man,tut,Infomatiker,zu,sein,macht,Spaß,aber,fehler,in,Texten,sind,oft,sehr,nervig'.split(','),
+            "Whole Sentenses": 'Einen Text zu schreiben ist sehr einfach.,Die korrekte Schreibweise eines Satzes ist wichtig.,Etwas zu Programmieren ist sehr interissant.,Jedes Programm sollte von mehreren Personen geprüft werden.,Man sollte nie einen Link in einer E-ail anklicken.,Wer das schreibt ist doof.,Viele Sätze aus dem Deutschen Wörterbuch sind echt schwierig und lang zu schreiben,Aber wenn man sich beeilt dann kann das was werden.,Rindfleischetikitirungsaufgabenübertragungsgesetz.,Donaudampfschifffahrgesellschaft,Ein Satz muss bestimmten Regeln folgen um Grammatikalisch korrekt zu sein.,Am Ende eines Satzes kommt in der regel ein Punkt oder ! oder ?.,Ein Zitat schreibt man immer in "Anführungszeichen".,Schnelles schreiben ist nicht alles was zählt.,Damit das Schreiben nicht langweilig wird sollte man viele verschiedene Dinge schreiben.,"Monoton" bedeutet das etwas Eintönig oder Langweilig ist.'.split(','),
+            "Random Symbols": 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,'.split(''),
+            "Write from your own Text": ""
         };
         let possible = [];
 
@@ -186,8 +186,8 @@
             setted = true;
             mode = document.querySelector('select') ? document.querySelector('select').value : mode;
             goal = NaN;
-            if(mode === 'Text abschreiben') {
-                possible = groups["Einzelne Wörter"];
+            if(mode === 'Write from your own Text') {
+                possible = groups["Lose Words"];
             } else {
                 possible = groups[mode];
             }
@@ -198,10 +198,10 @@
 
         function load() {
             index = 0;
-            if(mode === 'Zufällige Zeichen') {
+            if(mode === 'Random Symbols') {
                 text = possible = getSymbols();
                 console.log(text)
-            } else if(mode === 'Text abschreiben') {
+            } else if(mode === 'Write from your own Text') {
                 text = possible[txtIndex];
                 txtIndex++;
             } else {
@@ -235,7 +235,7 @@
                 } else if(keys.includes(e.key) === false) {
                     console.log('wrong');
                     score.wrong++;
-                    score.errors.push(`"${e.key}" gedrückt obwohl "${text.split('')[index]}" aus "${text}" gefordert war.`);
+                    score.errors.push(`"${e.key}" pressed, but "${text.split('')[index]}" from "${text}" was required.`);
                     score.trys++;
                 }
                 if(e.key === 'Tab') {
@@ -289,22 +289,22 @@
             textDiv.innerHTML = '';
             feedbackSpan.innerHTML = `
             <b>
-            <span>Zeit (s): ${(score.time/1000).toFixed(2)}</span>
+            <span>Time (s): ${(score.time/1000).toFixed(2)}</span>
             <br>
-            <span>Richtig: ${score.right}/${score.trys}, Falsch: ${score.wrong}/${score.trys}</span>
+            <span>Rigth: ${score.right}/${score.trys}, Wrong: ${score.wrong}/${score.trys}</span>
             <br>
-            <span>Erreicht: ${score.done}/${goal}</span>
+            <span>Reached: ${score.done}/${goal}</span>
             <br>
-            <span title="Zecihen pro Sekunde">ZPS: ${(score.right/(score.time/1000)).toFixed(2)}/s</span>
+            <span title="Symbols per Second">SpS: ${(score.right/(score.time/1000)).toFixed(2)}/s</span>
             <br>
             </b>
             <progress style="accent-color: lime;" max="100" value="${(score.right/score.trys)*100}"></progress>
-            <details class="mistakes" title="Alle Fehler">
-                <summary>Alle Fehler</summary>
+            <details class="mistakes" title="All Mistakes listed">
+                <summary>All Mistakes</summary>
             ${score.errors.join('<br><br>')}    
             </details>
             <br>
-            <button onclick="location.reload()">Nochmal?</button>
+            <button onclick="location.reload()">Again?</button>
             `
         }
     </script>
