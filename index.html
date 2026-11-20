@@ -63,12 +63,21 @@
     </style>
 </head>
 <body>
-    <button onclick="location.href = './typer_de.html'">German - Deutsch</button>
-    <br>
-    <button onclick="location.href = './typer_en.html'">English - English</button>
-    <br>
-    <small>More Languages comming soon!</small>
-    <br>
-    <small><sub>Planed: French, Spanish</sub></small>
+    <h1>You will be transfered ASAP</h1>
+    <span></span>
+    <script>
+        let counter = 5;
+        function count() {
+            if(counter === 0) {
+                location.href = './typer.html';
+            } else {
+                counter--;
+                documetn.querySelcetor('span').innerText = counter + ' seconds';
+                setTimeout(count,1000);
+            }
+        }
+
+        count();
+    </script>
 </body>
 </html>
