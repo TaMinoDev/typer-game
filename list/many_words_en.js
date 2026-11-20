@@ -1,4 +1,4 @@
-let words = [
+words = [
     "text",
     "normal",
     "forgetful",
