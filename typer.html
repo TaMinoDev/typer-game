@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-lang="page_title">typer - GER</title>
+    <style>
+        html {
+            background-color: grey;
+            padding: 5vw;
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            background: linear-gradient(var(--gradient-angle), red, orange);
+            height: 100vh;
+            animation: infinite forwards 120s bg;
+            transition: 5s;
+        }
+
+        body {
+            align-items: baseline;
+            justify-content: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: x-large;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.25);
+            scroll-behavior: smooth;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .mistakes {
+            color: white;
+            background-color: rgba(255, 174, 0, 0.75);
+            border: 1px solid black;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .main {
+            display: block;
+        }
+
+        #feedback, #textDiv {
+            font-size: medium;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        mark {
+            background-color: white;
+        }
+
+        @property --gradient-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes bg {
+            0% {
+                --gradient-angle: 0deg;
+            }
+            100% {
+                --gradient-angle: 360deg;
+            }
+        }
+
+        button, select, select option, input, select:focus, textarea {
+            border: none;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 5px;
+            border-radius: 5px;
+            outline: none
+        }
+
+        select option {
+            appearance: base-select;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div id="textDiv"></div>
+        <span id="feedback"></span>
+    </div>
+    <div class="start">
+        <h1 data-lang="header">Typer<br>Geschwindigkeit beim Schreiben<small><sup>V 1.5</sup></small></h1>
+        <h3 data-lang="subheader">Miss und Trainiere deine Schreibgeschwindigkeit!</h3>
+        <button data-lang="start-btn" onclick="setUp()">Starten</button>
+        <select>
+            <option data-lang="option-1">Einzelne Wörter</option>
+            <option data-lang="option-2">Ganze Sätze</option>
+            <option data-lang="option-3">Einzelne Wörter aus ganzen Sätzen</option>
+            <option data-lang="option-4">Zufällige Zeichen</option>
+            <option data-lang="option-5">Text abschreiben</option>
+            <option data-lang="option-6">Vokabeln abschreiben</option>
+        </select>
+        <input id="goaler" type="number" min="1" value="5" data-lang-placeholder="goaler" placeholder="Anzahl">
+        <button onclick="freeStyle()">Free Style</button>
+        <br>
+        <hr>
+        <textarea id="textInput"></textarea>
+        <br>
+        <span>Translation Options</span>
+        <select id="translator">
+            <option value="ger">Deutsch - German</option>
+            <option value="eng">English - English</option>
+        </select>
+    </div>
+    <script data-lang-src="many_words" src="list/many_words_de.js"></script>
+    <script>
+        const textDiv = document.getElementById('textDiv');
+        const feedbackSpan = document.getElementById('feedback');
+        const textInput = document.getElementById('textInput');
+        const translator = document.getElementById('translator');
+
+        let text = '';
+        let index = 0;
+        let contin = true;
+        let goal = 5;
+        let setted = false;
+        let mode = '';
+        let txtIndex = 0;
+        let vocabIndex = 0;
+        let deadKey = false;
+        let score = {
+            right: 0,
+            wrong: 0,
+            trys: 0,
+            done: 0,
+            time: 0, // ms
+            errors: [],
+        };
+        let words = [];
+        let mayReaload = true;
+
+        const keys = ['Home','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Clear','End','PageDown','Insert','Delete','Shift','Control','Tab','Backspace','Enter','ContextMenu','AltGraph','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','Pause','PageUp','CapsLock','Entf','Alt','Dead'];
+        const speacialLetters = ['é','è','á','à','ó','ò','ú','ù','í','ì'];
+        let groups = {
+            "Einzelne Wörter": words,
+            "Einzelne Wörter aus ganzen Sätzen": 'Texte,schreiben,ist,sehr,einfach,wenn,man,weiß,was,man,tut,Infomatiker,zu,sein,macht,Spaß,aber,fehler,in,Texten,sind,oft,sehr,nervig'.split(','),
+            "Ganze Sätze": 'Einen Text zu schreiben ist sehr einfach.,Die korrekte Schreibweise eines Satzes ist wichtig.,Etwas zu Programmieren ist sehr interissant.,Jedes Programm sollte von mehreren Personen geprüft werden.,Man sollte nie einen Link in einer E-ail anklicken.,Wer das schreibt ist doof.,Viele Sätze aus dem Deutschen Wörterbuch sind echt schwierig und lang zu schreiben,Aber wenn man sich beeilt dann kann das was werden.,Rindfleischetikitirungsaufgabenübertragungsgesetz.,Donaudampfschifffahrgesellschaft,Ein Satz muss bestimmten Regeln folgen um Grammatikalisch korrekt zu sein.,Am Ende eines Satzes kommt in der regel ein Punkt oder ! oder ?.,Ein Zitat schreibt man immer in "Anführungszeichen".,Schnelles schreiben ist nicht alles was zählt.,Damit das Schreiben nicht langweilig wird sollte man viele verschiedene Dinge schreiben.,"Monoton" bedeutet das etwas Eintönig oder Langweilig ist.'.split(','),
+            "Zufällige Zeichen": 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,'.split(''),
+            "Text abschreiben": "",
+            "Vokabeln abschreiben": "",
+        };
+        let possible = [];
+
+        window.onload = () => {
+            if(localStorage.getItem('typer-text')) {
+                textInput.value = localStorage.getItem('typer-text');
+            }
+        }
+
+        function importTranslation() {
+            if(location.search === '?eng') {
+                const block = document.createElement('script');
+                block.src = 'languagePack/eng.js';
+                document.body.appendChild(block);
+
+                console.log('Your are now in the English version of Typer');
+
+                translator.value = 'eng';
+                mayReaload = false;
+
+                setTimeout(() => {
+                    mayReaload = true;
+                },3000);
+
+                setTimeout(() => {
+                    if(enList) {
+                        found = true;
+                        words = enList;
+                        console.log('Found');
+                    } else {
+                        console.log('not found');
+                    }
+                    groups["Words"] = words;
+                },500);
+            } else if(location.search === '?ger' || location.search === '') {
+                const block = document.createElement('script');
+                block.src = 'list/many_words_de.js';
+                document.body.appendChild(block);
+
+                words = deList;
+                groups["Einzelne Wörter"] = words;
+            }
+        }
+
+        function setUp() {
+            score = {
+                right: 0,
+                wrong: 0,
+                trys: 0,
+                done: 0,
+                time: 0,
+                errors: [],
+            };
+            setted = true;
+            contin = true;
+
+            mode = document.querySelector('select') ? document.querySelector('select').value : mode;
+            goal = document.getElementById('goaler') ? Number(document.getElementById('goaler').value) : goal;
+
+            if(mode === 'Text abschreiben') {
+                possible = document.getElementById('textInput').value.split(/[\.,\n ]/);
+                localStorage.setItem('typer-text',document.getElementById('textInput').value);
+                txtIndex = 0;
+                goal = possible.length;
+            } else if(mode === 'Vokabeln abschreiben') {
+                possible = document.getElementById('textInput').value.split(';');
+                localStorage.setItem('typer-text',document.getElementById('textInput').value);
+                txtIndex = 0;
+                goal = Number(document.getElementById('goaler').value);
+            } else {
+                possible = groups[mode];
+            }
+
+            feedbackSpan.innerHTML = '';
+            textDiv.innerHTML  = '';
+
+            load();
+            document.querySelector('div.start')?.remove();
+        }
+
+        function freeStyle() {
+            score = {
+                right: 0,
+                wrong: 0,
+                trys: 0,
+                done: 0,
+                time: 0,
+                errors: [],
+            };
+            setted = true;
+            mode = document.querySelector('select') ? document.querySelector('select').value : mode;
+            goal = NaN;
+            if(mode === 'Text abschreiben') {
+                possible = groups["Einzelne Wörter"];
+            } else {
+                possible = groups[mode];
+            }
+               
+            load();
+            document.querySelector('div.start').remove();
+        }
+
+        function load() {
+            index = 0;
+            if(mode === 'Zufällige Zeichen') {
+                text = possible = getSymbols();
+                console.log(text)
+            } else if(mode === 'Text abschreiben') {
+                text = possible[txtIndex];
+                txtIndex++;
+            } else if(mode === "Vokabeln abschreiben") {
+                text = possible[random(0,possible.length-1)];
+            } else {
+                text = possible[random(0,possible.length-1)];
+            }
+            draw();
+        }
+
+        function getSymbols() {
+            const text = 'abcdefghijklmnopqrstuvwxyzäöüABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜ'.split('');
+            const länge = random(5,15);
+            let result = '';
+            for(let l = 0; l <= länge; l++) {
+                result += text[random(0,text.length-1)];
+            }
+            return result;
+        }
+        
+        document.addEventListener('keydown', function (e) {
+            if(setted === true) {
+                if(score.done === 0 && keys.includes(e.key) === false) {
+                    count();
+                }
+                if(e.key === text.split('')[index] || speacialLetters.includes(text.split('')[index]) && deadKey === true) {
+                    deadKey = false;
+                    console.log('right');
+                    console.log(e.key);
+                    index++;
+                    draw();
+                    score.right++;
+                    score.trys++;
+                } else if(keys.includes(e.key) === false || speacialLetters.includes(text.split('')[index]) && deadKey === true) {
+                    deadKey = false;
+                    console.log('wrong');
+                    console.log(e.key);
+                    score.wrong++;
+                    score.errors.push(`"${e.key}" != "${text}"`);
+                    score.trys++;
+                }
+                if(e.key === 'Tab') {
+                    showEnd();
+                } else if(e.key === 'Escape') {
+                    location.reload();
+                } else if(e.key === ' ') {
+                    e.preventDefault();
+                } else if(e.key === 'Dead') {
+                    deadKey = true;
+                }
+            }
+        });
+
+        function draw() {
+            let done = text.split('').slice(0,index);
+            let working = text.split('').slice(index,index+1);
+            let todo = text.split('').slice(index+1,text.split('').length);
+
+            textDiv.innerHTML = `<span class="done">${done.join('')}</span><mark>${working.join('')}</mark><b>${todo.join('')}</b>`;
+
+            console.log({
+                'done': done,
+                'working': working,
+                'todo': todo
+            });
+
+            if(working.length === 0) {
+                console.log('Fertig');
+                score.done++;
+                if(score.done !== goal) {
+                    load();
+                } else {
+                    showEnd();
+                }
+            }
+        }
+
+        function random(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function count() {
+            if(contin === true) {
+                score.time += 50;
+                setTimeout(count,50);
+                feedbackSpan.innerText = (score.time/1000).toFixed(2);
+            }
+        }
+
+        function showEnd() {
+            contin = false;
+            textDiv.innerHTML = '';
+            feedbackSpan.innerHTML = `
+            <b>
+            <label data-lang="time-label">Zeit (s): </label><span>${(score.time/1000).toFixed(2)}</span>
+            <br>
+            <label data-lang="right-label">Richtig: </label><span>${score.right}/${score.trys}</span>
+            <br>
+            <label data-lang="wrong-label">Falsch: </label><span>${score.wrong}/${score.trys}</span>
+            <br>
+            <label data-lang="reached-label">Erreicht: </label><span>${score.done}/${goal}</span>
+            <br>
+            <label data-lang="speed-label" data-lang-title="explain-title" title="Zeichen pro Sekunde">ZPS:</label><span>${(score.right/(score.time/1000)).toFixed(2)}/s</span>
+            <br>
+            </b>
+            <progress style="accent-color: lime;" max="100" value="${(score.right/score.trys)*100}"></progress>
+            <details class="mistakes" data-lang-title="mistakes-details" title="Alle Fehler">
+                <summary data-lang="mistakes-summary">Alle Fehler</summary>
+                ${score.errors.join('<br><br>')}    
+            </details>
+            <br>
+            <button onclick="location.reload()" data-lang="restart-btn">Nochmal?</button>
+            `;
+            if(score.errors.length === 0) {
+                document.querySelector('details.mistakes').style.display = 'none';
+            }
+            translate();
+        }
+
+        translator.oninput = () => {
+            if(mayReaload === true && confirm('Do you wonna reload to another language?')) {
+                location.search = translator.value;
+            }
+        }
+
+        importTranslation();
+    </script>
+</body>
+</html>
